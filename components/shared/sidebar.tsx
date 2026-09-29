@@ -95,20 +95,20 @@ export function Sidebar({ role, userInitials, userName, userEmail }: SidebarProp
   const sections = NAV[role] ?? NAV.student
 
   return (
-    <aside className="w-60 min-h-screen bg-slate-900 flex flex-col flex-shrink-0" aria-label="Main navigation">
+    <aside className="w-full min-h-0 bg-slate-900 flex flex-row flex-shrink-0 md:w-60 md:min-h-screen md:flex-col" aria-label="Main navigation">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
+      <div className="flex items-center gap-2.5 px-3 py-3 border-r border-white/10 md:px-5 md:py-5 md:border-r-0 md:border-b">
         <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm" aria-hidden="true">
           🎓
         </div>
-        <span className="font-bold text-white text-base">AlimShare</span>
+        <span className="hidden font-bold text-white text-base sm:inline">AlimShare</span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 overflow-y-auto">
+      <nav className="flex flex-1 items-center overflow-x-auto px-1 md:block md:overflow-y-auto md:px-0 md:py-4">
         {sections.map((section) => (
-          <div key={section.label}>
-            <p className="px-5 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+          <div key={section.label} className="flex flex-shrink-0 items-center gap-1 md:mb-3 md:block md:gap-0">
+            <p className="hidden px-5 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500 md:block">
               {section.label}
             </p>
             {section.items.map((item) => {
@@ -118,7 +118,7 @@ export function Sidebar({ role, userInitials, userName, userEmail }: SidebarProp
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 px-5 py-2.5 text-sm font-medium transition-colors',
+                    'flex items-center gap-2 px-2 py-2 text-xs font-medium transition-colors md:gap-3 md:px-5 md:py-2.5 md:text-sm',
                     isActive
                       ? 'bg-indigo-600/20 text-white border-r-2 border-indigo-500'
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -135,7 +135,7 @@ export function Sidebar({ role, userInitials, userName, userEmail }: SidebarProp
       </nav>
 
       {/* User footer */}
-      <div className="p-4 border-t border-white/10">
+      <div className="hidden border-t border-white/10 p-4 md:block">
         <div className="flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
