@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management — AlimShare LMS</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --clr-bg:          #f5f6fa;
+      --clr-surface:     #ffffff;
+      --clr-surface-2:   #f0f1f5;
+      --clr-border:      #e4e6ef;
+      --clr-text:        #1a1d2e;
+      --clr-text-muted:  #6b7280;
+      --clr-primary:     #4f46e5;
+      --clr-primary-h:   #4338ca;
+      --clr-primary-bg:  #eef2ff;
+      --clr-success:     #10b981;
+      --clr-success-bg:  #ecfdf5;
+      --clr-warn:        #f59e0b;
+      --clr-warn-bg:     #fffbeb;
+      --clr-danger:      #ef4444;
+      --clr-danger-bg:   #fef2f2;
+      --clr-sidebar:     #1a1d2e;
+      --clr-sidebar-txt: #c7c9d9;
+      --clr-sidebar-act: #4f46e5;
+      --radius:          0.625rem;
+      --shadow-sm:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md:       0 4px 16px rgba(0,0,0,.10);
+      --transition:      0.18s ease;
+      font-size: 16px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --clr-bg:         #0f1117;
+        --clr-surface:    #1a1d2e;
+        --clr-surface-2:  #242741;
+        --clr-border:     #2e3250;
+        --clr-text:       #e8eaf6;
+        --clr-text-muted: #7b80a0;
+        --clr-primary-bg: #1e1b4b;
+        --clr-success-bg: #064e3b;
+        --clr-warn-bg:    #451a03;
+        --clr-danger-bg:  #450a0a;
+        --clr-sidebar:    #13151f;
+        --clr-sidebar-txt:#a5aac5;
+      }
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      line-height: 1.5;
+      display: flex;
+      min-height: 100dvh;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      min-height: 100dvh;
+      background: var(--clr-sidebar);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 0;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--clr-primary);
+      border-radius: .5rem;
+      display: grid; place-items: center;
+      font-size: 1.1rem;
+    }
+    .logo-text { color: #fff; font-weight: 700; font-size: 1rem; }
+
+    .sidebar-nav { flex: 1; padding: 1rem 0; }
+    .nav-section-label {
+      font-size: .65rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.3);
+      padding: 1rem 1.5rem .4rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .6rem 1.5rem;
+      color: var(--clr-sidebar-txt);
+      text-decoration: none;
+      font-size: .875rem;
+      font-weight: 500;
+      border-radius: 0;
+      transition: background var(--transition), color var(--transition);
+      cursor: pointer;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .nav-item.active {
+      background: rgba(79,70,229,.2);
+      color: #fff;
+      border-right: 3px solid var(--clr-primary);
+    }
+    .nav-icon { font-size: 1rem; opacity: .8; }
+
+    .sidebar-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+    .user-mini {
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .user-mini-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--clr-primary);
+      display: grid; place-items: center;
+      font-weight: 700; font-size: .8rem; color: #fff; flex-shrink: 0;
+    }
+    .user-mini-info { overflow: hidden; }
+    .user-mini-name { color: #fff; font-size: .8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-mini-role { color: rgba(255,255,255,.4); font-size: .7rem; }
+
+    /* ── Main ───────────────────────────────────────────────────── */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .topbar {
+      background: var(--clr-surface);
+      border-bottom: 1px solid var(--clr-border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; gap: 1rem;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar-title { font-size: 1.1rem; font-weight: 700; flex: 1; }
+    .topbar-actions { display: flex; gap: .75rem; align-items: center; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .5rem 1.1rem;
+      border-radius: var(--radius);
+      font-size: .875rem; font-weight: 600;
+      cursor: pointer; border: none; transition: background var(--transition), transform .1s;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: var(--clr-primary); color: #fff; }
+    .btn-primary:hover { background: var(--clr-primary-h); }
+    .btn-ghost { background: transparent; color: var(--clr-text-muted); border: 1px solid var(--clr-border); }
+    .btn-ghost:hover { background: var(--clr-surface-2); color: var(--clr-text); }
+    .btn-danger { background: var(--clr-danger); color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-sm { padding: .35rem .8rem; font-size: .78rem; }
+
+    /* ── Content ────────────────────────────────────────────────── */
+    .content { padding: 2rem; flex: 1; }
+
+    /* ── Stats ──────────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column; gap: .4rem;
+    }
+    .stat-label { font-size: .78rem; color: var(--clr-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-value { font-size: 1.8rem; font-weight: 800; }
+    .stat-delta { font-size: .75rem; color: var(--clr-success); display: flex; align-items: center; gap: .25rem; }
+    .stat-icon {
+      width: 40px; height: 40px; border-radius: .5rem;
+      display: grid; place-items: center; font-size: 1.1rem;
+      margin-bottom: .25rem; align-self: flex-start;
+    }
+
+    /* ── Table Card ─────────────────────────────────────────────── */
+    .card {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--clr-border);
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .card-title { font-size: 1rem; font-weight: 700; flex: 1; }
+
+    .search-wrap {
+      position: relative; display: flex; align-items: center;
+    }
+    .search-icon {
+      position: absolute; left: .75rem; color: var(--clr-text-muted); font-size: .9rem; pointer-events: none;
+    }
+    .search-input {
+      padding: .48rem .75rem .48rem 2.2rem;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius);
+      background: var(--clr-surface-2);
+      color: var(--clr-text);
+      font-size: .875rem;
+      outline: none;
+      width: 220px;
+      transition: border-color var(--transition);
+    }
+    .search-input:focus { border-color: var(--clr-primary); }
+
+    .filter-select {
+      padding: .48rem .75rem;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius);
+      background: var(--clr-surface-2);
+      color: var(--clr-text);
+      font-size: .875rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .filter-select:focus { border-color: var(--clr-primary); }
+
+    /* ── Table ──────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: .875rem;
+    }
+    thead th {
+      background: var(--clr-surface-2);
+      padding: .75rem 1.25rem;
+      text-align: start;
+      font-size: .72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: var(--clr-text-muted);
+      border-bottom: 1px solid var(--clr-border);
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--clr-border);
+      transition: background var(--transition);
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--clr-surface-2); }
+    td { padding: .875rem 1.25rem; vertical-align: middle; }
+
+    .user-cell { display: flex; align-items: center; gap: .875rem; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-weight: 700; font-size: .75rem; color: #fff;
+      flex-shrink: 0;
+    }
+    .user-name { font-weight: 600; }
+    .user-email { font-size: .78rem; color: var(--clr-text-muted); }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .2rem .65rem; border-radius: 999px;
+      font-size: .72rem; font-weight: 600;
+    }
+    .badge-admin    { background: var(--clr-primary-bg); color: var(--clr-primary); }
+    .badge-teacher  { background: var(--clr-success-bg); color: var(--clr-success); }
+    .badge-student  { background: var(--clr-warn-bg);    color: var(--clr-warn); }
+    .badge-active   { background: var(--clr-success-bg); color: var(--clr-success); }
+    .badge-inactive { background: var(--clr-danger-bg);  color: var(--clr-danger); }
+    .badge-pending  { background: var(--clr-warn-bg);    color: var(--clr-warn); }
+    .badge-dot::before {
+      content: '';
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; display: inline-block;
+    }
+
+    .actions-cell { display: flex; align-items: center; gap: .5rem; }
+
+    /* ── Pagination ─────────────────────────────────────────────── */
+    .card-footer {
+      padding: .875rem 1.5rem;
+      border-top: 1px solid var(--clr-border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: .75rem;
+    }
+    .pagination { display: flex; gap: .35rem; }
+    .page-btn {
+      width: 32px; height: 32px; border-radius: .4rem;
+      display: grid; place-items: center;
+      font-size: .8rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--clr-border);
+      background: var(--clr-surface); color: var(--clr-text-muted);
+      transition: all var(--transition);
+    }
+    .page-btn:hover, .page-btn.active {
+      background: var(--clr-primary); color: #fff; border-color: var(--clr-primary);
+    }
+    .page-info { font-size: .8rem; color: var(--clr-text-muted); }
+
+    /* ── Dialog / Modal ─────────────────────────────────────────── */
+    dialog {
+      border: none;
+      border-radius: calc(var(--radius) * 1.5);
+      box-shadow: var(--shadow-md);
+      background: var(--clr-surface);
+      color: var(--clr-text);
+      padding: 0;
+      width: min(520px, 92vw);
+      max-height: 90dvh;
+      overflow-y: auto;
+    }
+    dialog::backdrop {
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(2px);
+    }
+    .dialog-header {
+      padding: 1.5rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--clr-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .dialog-title { font-size: 1.05rem; font-weight: 700; }
+    .dialog-close {
+      width: 30px; height: 30px; border-radius: .4rem;
+      border: none; background: var(--clr-surface-2);
+      color: var(--clr-text-muted); cursor: pointer; font-size: 1rem;
+      display: grid; place-items: center; transition: background var(--transition);
+    }
+    .dialog-close:hover { background: var(--clr-border); }
+
+    .dialog-body { padding: 1.5rem; }
+    .dialog-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--clr-border);
+      display: flex; gap: .75rem; justify-content: flex-end;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .9rem; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { font-size: .8rem; font-weight: 600; color: var(--clr-text-muted); }
+    input, select, textarea {
+      padding: .55rem .85rem;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius);
+      background: var(--clr-surface-2);
+      color: var(--clr-text);
+      font-size: .875rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--clr-primary); }
+    input:user-invalid, select:user-invalid { border-color: var(--clr-danger); }
+    textarea { resize: vertical; min-height: 80px; }
+    .form-hint { font-size: .75rem; color: var(--clr-text-muted); }
+
+    .avatar-picker {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+    }
+    .avatar-preview {
+      width: 64px; height: 64px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 1.3rem; color: #fff;
+      background: var(--clr-primary); flex-shrink: 0;
+    }
+    .avatar-btn { font-size: .8rem; }
+
+    /* ── Confirm Dialog ─────────────────────────────────────────── */
+    .confirm-icon { font-size: 2rem; margin-bottom: .75rem; }
+    .confirm-text { font-size: .9rem; color: var(--clr-text-muted); margin-top: .35rem; }
+
+    /* ── Empty State ────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 3rem 1rem;
+      color: var(--clr-text-muted);
+    }
+    .empty-state-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .empty-state-text { font-size: .9rem; }
+
+    /* ── Toast ──────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      background: #1a1d2e; color: #fff;
+      padding: .75rem 1.25rem; border-radius: var(--radius);
+      font-size: .875rem; font-weight: 500;
+      box-shadow: var(--shadow-md);
+      opacity: 0; transform: translateY(6px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none; z-index: 1000;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { width: 200px; }
+      .content { padding: 1.25rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .topbar { padding: .875rem 1.25rem; }
+      .card-header { flex-direction: column; align-items: stretch; }
+      .search-input { width: 100%; }
+    }
+    @media (max-width: 560px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; min-height: auto; flex-direction: row; padding: .75rem; height: auto; position: relative; }
+      .sidebar-logo { padding: 0 .75rem 0 0; border-bottom: none; border-right: 1px solid rgba(255,255,255,.07); }
+      .sidebar-nav { display: flex; flex-direction: row; padding: 0 .5rem; overflow-x: auto; }
+      .nav-section-label, .sidebar-footer { display: none; }
+      .nav-item { padding: .5rem .75rem; white-space: nowrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ───────────────────────────────────────────────────── -->
+<aside class="sidebar" aria-label="Main navigation">
+  <div class="sidebar-logo">
+    <div class="logo-icon" aria-hidden="true">🎓</div>
+    <span class="logo-text">AlimShare</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Overview</span>
+    <button class="nav-item" onclick="showToast('Dashboard coming soon')">
+      <span class="nav-icon" aria-hidden="true">📊</span> Dashboard
+    </button>
+
+    <span class="nav-section-label">Management</span>
+    <button class="nav-item active" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">👥</span> Users
+    </button>
+    <button class="nav-item" onclick="showToast('Courses coming soon')">
+      <span class="nav-icon" aria-hidden="true">📚</span> Courses
+    </button>
+    <button class="nav-item" onclick="showToast('Enrollments coming soon')">
+      <span class="nav-icon" aria-hidden="true">🎟️</span> Enrollments
+    </button>
+
+    <span class="nav-section-label">System</span>
+    <button class="nav-item" onclick="showToast('Reports coming soon')">
+      <span class="nav-icon" aria-hidden="true">📈</span> Reports
+    </button>
+    <button class="nav-item" onclick="showToast('Settings coming soon')">
+      <span class="nav-icon" aria-hidden="true">⚙️</span> Settings
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-mini">
+      <div class="user-mini-avatar" aria-hidden="true">A</div>
+      <div class="user-mini-info">
+        <div class="user-mini-name">Abdullah Alim</div>
+        <div class="user-mini-role">Administrator</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ───────────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <h1 class="topbar-title">User Management</h1>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="showToast('Export coming soon')">
+        ↑ Export
+      </button>
+      <button class="btn btn-primary" onclick="openAddDialog()">
+        + Add User
+      </button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- Stats -->
+    <div class="stats-grid" role="region" aria-label="User statistics">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#eef2ff;" aria-hidden="true">👥</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value" id="stat-total">248</div>
+        <div class="stat-delta">↑ 12 this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#ecfdf5;" aria-hidden="true">✅</div>
+        <div class="stat-label">Active</div>
+        <div class="stat-value" id="stat-active" style="color:var(--clr-success)">193</div>
+        <div class="stat-delta">77.8% of total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fffbeb;" aria-hidden="true">🕐</div>
+        <div class="stat-label">Pending</div>
+        <div class="stat-value" id="stat-pending" style="color:var(--clr-warn)">31</div>
+        <div class="stat-delta">Awaiting approval</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fef2f2;" aria-hidden="true">🚫</div>
+        <div class="stat-label">Inactive</div>
+        <div class="stat-value" id="stat-inactive" style="color:var(--clr-danger)">24</div>
+        <div class="stat-delta">Need review</div>
+      </div>
+    </div>
+
+    <!-- User Table Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">All Users</h2>
+        <div class="search-wrap">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            class="search-input"
+            id="searchInput"
+            placeholder="Search users…"
+            aria-label="Search users"
+            oninput="filterTable()"
+          />
+        </div>
+        <select class="filter-select" id="roleFilter" aria-label="Filter by role" onchange="filterTable()">
+          <option value="">All Roles</option>
+          <option value="Admin">Admin</option>
+          <option value="Teacher">Teacher</option>
+          <option value="Student">Student</option>
+        </select>
+        <select class="filter-select" id="statusFilter" aria-label="Filter by status" onchange="filterTable()">
+          <option value="">All Status</option>
+          <option value="Active">Active</option>
+          <option value="Pending">Pending</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Users list">
+          <thead>
+            <tr>
+              <th scope="col">User</th>
+              <th scope="col">Role</th>
+              <th scope="col">Status</th>
+              <th scope="col">Joined</th>
+              <th scope="col">Courses</th>
+              <th scope="col" style="text-align:end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <!-- Rows injected by JS -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="emptyState" hidden>
+          <div class="empty-state-icon" aria-hidden="true">🔎</div>
+          <div class="empty-state-text">No users found matching your filters.</div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="page-info" id="pageInfo">Showing 1–8 of 8 users</div>
+        <nav class="pagination" aria-label="Pagination">
+          <button class="page-btn" aria-label="Previous page" onclick="showToast('Page navigation')">‹</button>
+          <button class="page-btn active" aria-current="page">1</button>
+          <button class="page-btn" onclick="showToast('Page navigation')">2</button>
+          <button class="page-btn" onclick="showToast('Page navigation')">3</button>
+          <button class="page-btn" aria-label="Next page" onclick="showToast('Page navigation')">›</button>
+        </nav>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Add / Edit User Dialog ────────────────────────────────────── -->
+<dialog id="userDialog" aria-labelledby="dialogTitle">
+  <div class="dialog-header">
+    <h2 class="dialog-title" id="dialogTitle">Add New User</h2>
+    <button class="dialog-close" onclick="closeDialog('userDialog')" aria-label="Close dialog">✕</button>
+  </div>
+  <form id="userForm" method="dialog" novalidate onsubmit="saveUser(event)">
+    <div class="dialog-body">
+      <div class="avatar-picker">
+        <div class="avatar-preview" id="dialogAvatar" aria-hidden="true">?</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:600;margin-bottom:.3rem">Profile Photo</div>
+          <div class="form-hint">Avatar auto-generated from name</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name <span aria-hidden="true" style="color:var(--clr-danger)">*</span></label>
+          <input type="text" id="firstName" required autocomplete="given-name" oninput="updateDialogAvatar()" />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name <span aria-hidden="true" style="color:var(--clr-danger)">*</span></label>
+          <input type="text" id="lastName" required autocomplete="family-name" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address <span aria-hidden="true" style="color:var(--clr-danger)">*</span></label>
+        <input type="email" id="email" required autocomplete="email" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="role">Role <span aria-hidden="true" style="color:var(--clr-danger)">*</span></label>
+          <select id="role" required>
+            <option value="">Select role…</option>
+            <option value="Admin">Admin</option>
+            <option value="Teacher">Teacher</option>
+            <option value="Student">Student</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status">
+            <option value="Active">Active</option>
+            <option value="Pending">Pending</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" placeholder="Optional notes about this user…"></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeDialog('userDialog')">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="saveBtn">Save User</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ── Confirm Delete Dialog ─────────────────────────────────────── -->
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+  <div class="dialog-header">
+    <h2 class="dialog-title" id="confirmTitle">Delete User</h2>
+    <button class="dialog-close" onclick="closeDialog('confirmDialog')" aria-label="Close dialog">✕</button>
+  </div>
+  <div class="dialog-body" style="text-align:center; padding-top:2rem;">
+    <div class="confirm-icon" aria-hidden="true">🗑️</div>
+    <div style="font-weight:700; font-size:1rem">Delete <span id="deleteUserName"></span>?</div>
+    <p class="confirm-text">This action cannot be undone. The user and all their data will be permanently removed.</p>
+  </div>
+  <div class="dialog-footer">
+    <button class="btn btn-ghost" onclick="closeDialog('confirmDialog')">Cancel</button>
+    <button class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete</button>
+  </div>
+</dialog>
+
+<!-- ── Toast ──────────────────────────────────────────────────────── -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ── Scripts ───────────────────────────────────────────────────── -->
+<script>
+  // ── Sample data ────────────────────────────────────────────────
+  const COLORS = ['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#14b8a6'];
+  let users = [
+    { id: 1, firstName:'Abdullah', lastName:'Alim',    email:'a.alim@alimshare.id',     role:'Admin',   status:'Active',   joined:'2024-01-10', courses: 14 },
+    { id: 2, firstName:'Siti',     lastName:'Rahayu',  email:'s.rahayu@alimshare.id',   role:'Teacher', status:'Active',   joined:'2024-02-18', courses: 8  },
+    { id: 3, firstName:'Budi',     lastName:'Santoso', email:'b.santoso@student.id',    role:'Student', status:'Active',   joined:'2024-03-05', courses: 4  },
+    { id: 4, firstName:'Dewi',     lastName:'Lestari', email:'d.lestari@student.id',    role:'Student', status:'Pending',  joined:'2024-08-22', courses: 0  },
+    { id: 5, firstName:'Rizky',    lastName:'Pratama', email:'r.pratama@teacher.id',    role:'Teacher', status:'Active',   joined:'2024-04-11', courses: 5  },
+    { id: 6, firstName:'Maya',     lastName:'Indah',   email:'m.indah@student.id',      role:'Student', status:'Inactive', joined:'2024-05-30', courses: 2  },
+    { id: 7, firstName:'Fajar',    lastName:'Nugroho', email:'f.nugroho@student.id',    role:'Student', status:'Pending',  joined:'2024-09-01', courses: 0  },
+    { id: 8, firstName:'Laila',    lastName:'Husna',   email:'l.husna@alimshare.id',    role:'Admin',   status:'Active',   joined:'2024-06-15', courses: 11 },
+  ];
+  let nextId = 9;
+  let editingId = null;
+  let deleteTargetId = null;
+
+  // ── Helpers ─────────────────────────────────────────────────────
+  function initials(u) { return (u.firstName[0] + u.lastName[0]).toUpperCase(); }
+  function colorFor(u) { return COLORS[(u.firstName.charCodeAt(0) + u.lastName.charCodeAt(0)) % COLORS.length]; }
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  function roleBadge(role) {
+    const cls = { Admin:'badge-admin', Teacher:'badge-teacher', Student:'badge-student' }[role] || 'badge-admin';
+    const icon = { Admin:'🛡️', Teacher:'📖', Student:'🎒' }[role] || '👤';
+    return `<span class="badge ${cls}">${icon} ${role}</span>`;
+  }
+  function statusBadge(status) {
+    const cls = { Active:'badge-active', Inactive:'badge-inactive', Pending:'badge-pending' }[status] || '';
+    return `<span class="badge badge-dot ${cls}">${status}</span>`;
+  }
+
+  // ── Render ──────────────────────────────────────────────────────
+  function renderTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const roleF  = document.getElementById('roleFilter').value;
+    const statF  = document.getElementById('statusFilter').value;
+
+    const filtered = users.filter(u => {
+      const txt = `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase();
+      return (!search || txt.includes(search))
+          && (!roleF  || u.role   === roleF)
+          && (!statF  || u.status === statF);
+    });
+
+    const tbody = document.getElementById('userTableBody');
+    const empty = document.getElementById('emptyState');
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.hidden = false;
+    } else {
+      empty.hidden = true;
+      tbody.innerHTML = filtered.map(u => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="avatar" style="background:${colorFor(u)}" aria-hidden="true">${initials(u)}</div>
+              <div>
+                <div class="user-name">${u.firstName} ${u.lastName}</div>
+                <div class="user-email">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td>${roleBadge(u.role)}</td>
+          <td>${statusBadge(u.status)}</td>
+          <td style="color:var(--clr-text-muted)">${formatDate(u.joined)}</td>
+          <td style="font-weight:600">${u.courses}</td>
+          <td>
+            <div class="actions-cell" style="justify-content:flex-end">
+              <button class="btn btn-ghost btn-sm" onclick="openEditDialog(${u.id})" aria-label="Edit ${u.firstName} ${u.lastName}">✏️ Edit</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--clr-danger);border-color:var(--clr-danger-bg)" onclick="openDeleteDialog(${u.id})" aria-label="Delete ${u.firstName} ${u.lastName}">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('pageInfo').textContent =
+      `Showing 1–${filtered.length} of ${filtered.length} user${filtered.length !== 1 ? 's' : ''}`;
+  }
+
+  function filterTable() { renderTable(); }
+
+  // ── Add Dialog ──────────────────────────────────────────────────
+  function openAddDialog() {
+    editingId = null;
+    document.getElementById('dialogTitle').textContent = 'Add New User';
+    document.getElementById('saveBtn').textContent = 'Save User';
+    document.getElementById('userForm').reset();
+    document.getElementById('dialogAvatar').textContent = '?';
+    document.getElementById('dialogAvatar').style.background = 'var(--clr-primary)';
+    document.getElementById('userDialog').showModal();
+  }
+
+  function openEditDialog(id) {
+    const u = users.find(u => u.id === id);
+    if (!u) return;
+    editingId = id;
+    document.getElementById('dialogTitle').textContent = 'Edit User';
+    document.getElementById('saveBtn').textContent = 'Update User';
+    document.getElementById('firstName').value = u.firstName;
+    document.getElementById('lastName').value  = u.lastName;
+    document.getElementById('email').value     = u.email;
+    document.getElementById('role').value      = u.role;
+    document.getElementById('status').value    = u.status;
+    document.getElementById('notes').value     = '';
+    updateDialogAvatar();
+    document.getElementById('userDialog').showModal();
+  }
+
+  function updateDialogAvatar() {
+    const fn = document.getElementById('firstName').value;
+    const ln = document.getElementById('lastName').value;
+    const av = document.getElementById('dialogAvatar');
+    const i  = ((fn[0] || '?') + (ln[0] || '')).toUpperCase();
+    av.textContent = i;
+    av.style.background = fn ? COLORS[(fn.charCodeAt(0) + (ln.charCodeAt(0)||0)) % COLORS.length] : 'var(--clr-primary)';
+  }
+
+  function saveUser(e) {
+    e.preventDefault();
+    const fn = document.getElementById('firstName').value.trim();
+    const ln = document.getElementById('lastName').value.trim();
+    const em = document.getElementById('email').value.trim();
+    const ro = document.getElementById('role').value;
+    const st = document.getElementById('status').value;
+    if (!fn || !ln || !em || !ro) { showToast('❌ Please fill all required fields'); return; }
+
+    if (editingId) {
+      const u = users.find(u => u.id === editingId);
+      Object.assign(u, { firstName: fn, lastName: ln, email: em, role: ro, status: st });
+      showToast('✅ User updated successfully');
+    } else {
+      users.unshift({ id: nextId++, firstName: fn, lastName: ln, email: em, role: ro, status: st, joined: new Date().toISOString().slice(0,10), courses: 0 });
+      showToast('✅ User added successfully');
+    }
+    closeDialog('userDialog');
+    renderTable();
+  }
+
+  // ── Delete Dialog ───────────────────────────────────────────────
+  function openDeleteDialog(id) {
+    const u = users.find(u => u.id === id);
+    if (!u) return;
+    deleteTargetId = id;
+    document.getElementById('deleteUserName').textContent = `${u.firstName} ${u.lastName}`;
+    document.getElementById('confirmDialog').showModal();
+    document.getElementById('confirmDeleteBtn').onclick = () => {
+      users = users.filter(u => u.id !== deleteTargetId);
+      closeDialog('confirmDialog');
+      renderTable();
+      showToast('🗑️ User deleted');
+    };
+  }
+
+  function closeDialog(id) { document.getElementById(id).close(); }
+
+  // Close on backdrop click
+  document.querySelectorAll('dialog').forEach(d => {
+    d.addEventListener('click', e => { if (e.target === d) d.close(); });
+  });
+
+  // ── Toast ───────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Init ────────────────────────────────────────────────────────
+  renderTable();
+</script>
+</body>
+</html>
