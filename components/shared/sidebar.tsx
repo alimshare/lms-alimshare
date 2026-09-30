@@ -49,14 +49,14 @@ const NAV: Record<UserRole, NavSection[]> = {
     {
       label: 'Overview',
       items: [
-        { href: '/teacher', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+        { href: '/teachers', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
       ],
     },
     {
       label: 'Content',
       items: [
-        { href: '/teacher/courses', label: 'My Courses', icon: <BookOpen size={16} /> },
-        { href: '/teacher/courses/create', label: 'Create Course', icon: <PlusCircle size={16} /> },
+        { href: '/teachers/courses', label: 'My Courses', icon: <BookOpen size={16} /> },
+        { href: '/teachers/courses/create', label: 'Create Course', icon: <PlusCircle size={16} /> },
       ],
     },
   ],
@@ -112,7 +112,7 @@ export function Sidebar({ role, userInitials, userName, userEmail }: SidebarProp
               {section.label}
             </p>
             {section.items.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/admin' && item.href !== '/teacher' && item.href !== '/student' && pathname.startsWith(item.href))
+              const isActive = pathname === item.href || (item.href !== '/admin' && item.href !== '/teachers' && item.href !== '/student' && pathname.startsWith(item.href))
               return (
                 <Link
                   key={item.href}

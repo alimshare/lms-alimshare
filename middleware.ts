@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server'
 // Role-to-dashboard mapping
 const ROLE_REDIRECTS: Record<string, string> = {
   administrator: '/admin',
-  teacher: '/teacher',
+  teacher: '/teachers',
   student: '/student',
 }
 
@@ -16,7 +16,7 @@ export default auth((req) => {
 
   // Protected route prefixes
   const isAdminRoute   = pathname.startsWith('/admin')
-  const isTeacherRoute = pathname.startsWith('/teacher')
+  const isTeacherRoute = pathname === '/teachers' || pathname.startsWith('/teachers/')
   const isStudentRoute = pathname.startsWith('/student')
   const isAuthRoute    = pathname.startsWith('/login') ||
                          pathname.startsWith('/register') ||
